@@ -10,6 +10,7 @@ from django.utils.text import wrap
 from django.utils.translation import ugettext, ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.core.paginator import Paginator
 
 # favour django-mailer but fall back to django.core.mail
 
@@ -17,6 +18,10 @@ if "mailer" in settings.INSTALLED_APPS:
     from mailer import send_mail
 else:
     from django.core.mail import send_mail
+
+
+PAGE_LENGTH = getattr(settings, 'DJANGO_MESSAGES_PAGE_LENGTH', -1)
+
 
 def format_quote(sender, body):
     """
@@ -137,3 +142,11 @@ def get_storage_backend():
         )
     kwargs = getattr(settings, 'DJANGO_MESSAGES_STORAGE_BACKEND_KWARGS', {})
     return klass(**kwargs)
+
+
+def paginate_queryset(request, qs):
+    if PAGE_LENGTH == -1:
+        # Disable pagination
+        return qs
+    paginator = Paginator(qs, PAGE_LENGTH)
+    return paginator.get_page(request.GET.get('page', 1))
